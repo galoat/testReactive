@@ -48,7 +48,7 @@ class ReservationRestController(@Autowired val reservationRepository: Reservatio
 
 
 @Component
-class DataWriter(@Autowired val reservationRepository: ReservationRepository) : ApplicationRunner {
+class DataWriteddezdezdzer(@Autowired val reservationRepository: ReservationRepository) : ApplicationRunner {
 
     override fun run(args: ApplicationArguments?) {
         reservationRepository.deleteAll().thenMany(Flux.just("test1", "test2"))
