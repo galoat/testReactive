@@ -1,7 +1,9 @@
 package com.example.reservationclient
 
+import org.reactivestreams.Publisher
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction
 
 import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder
@@ -13,6 +15,12 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.bodyToFlux
+import org.springframework.web.reactive.function.server.ServerResponse
+import org.springframework.web.reactive.function.server.body
+import org.springframework.web.reactive.function.server.router
+import javax.naming.spi.ResolveResult
 
 @SpringBootApplication
 class ReservationClientApplication {
@@ -48,7 +56,19 @@ fun main(args: Array<String>) {
     runApplication<ReservationClientApplication>(*args) {
         addInitializers(
                 beans {
-
+                    bean{
+                        WebClient.builder().filter(ref<LoadBalancerExchangeFilterFunction>()).build()
+                    }
+                    bean{
+                        val client  = ref<WebClient>()
+                        router{
+                            GET("/reservations/names"){
+                                val body : Publisher<String> = client
+                                        .get().uri("htt://reservation-service/reservations").retrieve().bodyToFlux<Reservation>().map{it.reservationName}
+                                ServerResponse.ok().body(body)
+                            }
+                        }
+                    }
 
                     bean {
                         //@formatter:off
@@ -87,3 +107,7 @@ fun main(args: Array<String>) {
                 })
     }
 }
+
+
+
+class Reservation(val id : String?=null, val reservationName: String? = null)
