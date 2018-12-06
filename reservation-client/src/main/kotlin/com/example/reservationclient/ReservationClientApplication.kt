@@ -9,6 +9,7 @@ import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder
 import org.springframework.cloud.gateway.route.builder.filters
 import org.springframework.cloud.gateway.route.builder.routes
+import org.springframework.cloud.netflix.hystrix.HystrixCommands
 import org.springframework.context.annotation.Bean
 import org.springframework.context.support.beans
 import org.springframework.security.config.web.server.ServerHttpSecurity
@@ -20,6 +21,7 @@ import org.springframework.web.reactive.function.client.bodyToFlux
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.body
 import org.springframework.web.reactive.function.server.router
+import reactor.core.publisher.Flux
 import javax.naming.spi.ResolveResult
 
 @SpringBootApplication
@@ -65,7 +67,13 @@ fun main(args: Array<String>) {
                             GET("/reservations/names"){
                                 val body : Publisher<String> = client
                                         .get().uri("htt://reservation-service/reservations").retrieve().bodyToFlux<Reservation>().map{it.reservationName}
-                                ServerResponse.ok().body(body)
+
+                                val cb = HystrixCommands.from(body)
+                                        .fallback(Flux.just("iojiojo"))
+                                        .commandName("names")
+                                        .eager()
+                                        .build()
+                                ServerResponse.ok().body(cb)
                             }
                         }
                     }
