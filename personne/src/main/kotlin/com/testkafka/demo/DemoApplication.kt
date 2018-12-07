@@ -8,6 +8,10 @@ import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.cloud.stream.annotation.EnableBinding
+import org.springframework.cloud.stream.annotation.Input
+import org.springframework.cloud.stream.annotation.StreamListener
+import org.springframework.cloud.stream.messaging.Sink
 import org.springframework.context.annotation.Bean
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -17,16 +21,23 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.function.server.*
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 
+@EnableBinding(Sink::class)
 @SpringBootApplication
 class DemoApplication{
+    @Autowired
+    lateinit var reservationRepository : ReservationRepository
     @Bean
     fun routes(@Autowired reservationRepository: ReservationRepository) :RouterFunction<ServerResponse>{
         return RouterFunctions.route(RequestPredicates.GET("/reservations"), HandlerFunction<ServerResponse> { ServerResponse.ok().body(reservationRepository.findAll()) })
     }
-}
+    @StreamListener
+    fun process(@Input(Sink.INPUT)incomingdata: Flux<String>){
+        incomingdata.map{ Reservation(null, it)}.flatMap { this.reservationRepository.save(it) }.subscribe { System.out.println("saved " +it.reservationName) }
+    }
 
+
+}
     fun main(args: Array<String>) {
         runApplication<DemoApplication>(*args)
 
