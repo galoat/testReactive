@@ -1,0 +1,2 @@
+curl -d'{"reservationName": "dezdes"}' -H "content-type: application/json" http://localhost:9999/reservations
+
