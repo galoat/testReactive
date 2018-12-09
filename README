@@ -1,2 +1,6 @@
 curl -d'{"reservationName": "dezdes"}' -H "content-type: application/json" http://localhost:9999/reservations
 
+List all topic :
+- kafka-topics.sh --list --zookeeper zookeeper:2181
+List data
+- ./kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic topicName --from-beginning --max-messages 10
